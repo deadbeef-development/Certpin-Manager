@@ -11,9 +11,9 @@ from certpin.server import run_certpin_server
 NGINX_SITES_DIR = "/etc/nginx/sites-enabled"
 CERTPIN_DIR_PATH = "/etc/certpin"
 PINNED_CERTS_DIR_PATH = CERTPIN_DIR_PATH + "/pinned_certs"
+SITE_CERTS_DIR_PATH = CERTPIN_DIR_PATH + "/site_certs"
+SITE_KEYS_DIR_PATH = CERTPIN_DIR_PATH + "/site_keys"
 CONFIG_FILE_PATH = CERTPIN_DIR_PATH + "/config.json"
-CERT_FILE_PATH = CERTPIN_DIR_PATH + "/site_cert.pem"
-PRIVKEY_FILE_PATH = CERTPIN_DIR_PATH + "/site_privkey.pem"
 CERTPIN_BIND_ADDR = ('127.0.0.1', 0)
 
 NGINX_CONFIG_TEMPLATE = \
@@ -38,8 +38,12 @@ server {
 reload_nginx = partial(os.system, "sudo nginx -s reload")
 
 @contextmanager
-def run_site(server_name: str, upstream_server_name: str, upstream_host: str, upstream_port: int):
-    pinned_cert_filepath = PINNED_CERTS_DIR_PATH + '/' + upstream_server_name + '.pem'
+def run_site(
+    server_name: str, 
+    upstream_server_name: str, upstream_host: str, upstream_port: int,
+    pinned_cert_file_path: str,
+    site_cert_file_path: str, site_key_file_path: str
+):
     nginx_config_file_path = NGINX_SITES_DIR + '/' + upstream_server_name + '.conf'
 
     ssl_target_addr = (upstream_host, upstream_port)
@@ -47,7 +51,7 @@ def run_site(server_name: str, upstream_server_name: str, upstream_host: str, up
     context = run_certpin_server(CERTPIN_BIND_ADDR, 
         ssl_target_addr=ssl_target_addr,
         target_server_name=upstream_server_name,
-        pinned_cert_filepath=pinned_cert_filepath
+        pinned_cert_filepath=pinned_cert_file_path
     )
 
     with context as server:
@@ -55,8 +59,8 @@ def run_site(server_name: str, upstream_server_name: str, upstream_host: str, up
 
         nginx_config = NGINX_CONFIG_TEMPLATE.format(
             server_name=server_name,
-            site_cert=CERT_FILE_PATH,
-            site_privkey=PRIVKEY_FILE_PATH,
+            site_cert=site_cert_file_path,
+            site_privkey=site_key_file_path,
             certpin_port=certpin_port
         )
 
@@ -66,15 +70,32 @@ def run_site(server_name: str, upstream_server_name: str, upstream_host: str, up
         yield server
 
 def run_site_from_config(site_config: dict, ready: Event) -> Thread:
-    def target():
+    def target(
+            pinned_cert: str = None, 
+            site_cert: str = None, 
+            site_key: str = None,
+            **kwargs
+    ):
+        pinned_cert_file_path = PINNED_CERTS_DIR_PATH + '/' + pinned_cert
+        site_cert_file_path = SITE_CERTS_DIR_PATH + '/' + site_cert
+        site_key_file_path = SITE_KEYS_DIR_PATH + '/' + site_key
+
         try:
-            with run_site(**site_config) as server:
+            context = run_site(
+                pinned_cert_file_path=pinned_cert_file_path,
+                site_cert_file_path=site_cert_file_path,
+                site_key_file_path=site_key_file_path,
+                **kwargs
+            )
+
+            with context as server:
                 ready.set()
                 server.serve_forever()
+            
         finally:
             ready.set()
     
-    t = Thread(None, target)
+    t = Thread(None, target, **site_config)
     t.start()
 
     return t
