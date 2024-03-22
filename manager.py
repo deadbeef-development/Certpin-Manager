@@ -18,21 +18,21 @@ CERTPIN_BIND_ADDR = ('127.0.0.1', 0)
 
 NGINX_CONFIG_TEMPLATE = \
 """
-server {
+server {{
     listen 443 ssl;
     server_name {server_name};
 
     ssl_certificate {site_cert};
     ssl_certificate_key {site_privkey};
 
-    location / {
+    location / {{
         proxy_pass http://127.0.0.1:{certpin_port};
         proxy_set_header X-Forwarded-Proto https;
         proxy_set_header X-Forwarded-Port 443;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-}
+    }}
+}}
 """
 
 reload_nginx = partial(os.system, "sudo nginx -s reload")
