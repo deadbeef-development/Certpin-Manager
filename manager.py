@@ -101,7 +101,9 @@ def run_site_from_config(site_config: dict, ready: Event) -> Thread:
     return t
 
 def __main__(args: List[str]):
-    os.makedirs(PINNED_CERTS_DIR_PATH)
+    os.makedirs(PINNED_CERTS_DIR_PATH, exist_ok=True)
+    os.makedirs(SITE_CERTS_DIR_PATH, exist_ok=True)
+    os.makedirs(SITE_KEYS_DIR_PATH, exist_ok=True)
 
     with open(CONFIG_FILE_PATH, 'r') as fio:
         config = json.load(fio)
