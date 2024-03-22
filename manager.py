@@ -8,7 +8,7 @@ from contextlib import contextmanager
 
 from certpin.server import run_certpin_server
 
-NGINX_SITES_DIR = "/etc/nginx/sites-enabled"
+NGINX_SITES_DIR = "/etc/nginx/conf.d"
 CERTPIN_DIR_PATH = "/etc/certpin"
 PINNED_CERTS_DIR_PATH = CERTPIN_DIR_PATH + "/pinned_certs"
 SITE_CERTS_DIR_PATH = CERTPIN_DIR_PATH + "/site_certs"
