@@ -95,7 +95,7 @@ def run_site_from_config(site_config: dict, ready: Event) -> Thread:
         finally:
             ready.set()
     
-    t = Thread(None, target, **site_config)
+    t = Thread(None, target, kwargs=site_config)
     t.start()
 
     return t
