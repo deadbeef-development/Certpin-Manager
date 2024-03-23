@@ -1,0 +1,14 @@
+{
+    "sites": [
+        {
+            "server_name": "example.com.certpin.dbdev.me",
+            "upstream_host": "example.com",
+            "upstream_port": 443,
+            "upstream_server_name": "example.com",
+            "pinned_cert": "example.com.cert.der",
+            "site_cert": "example.com.certpin.dbdev.me.cert.pem",
+            "site_key": "example.com.certpin.dbdev.me.privkey.pem",
+            "host_header": "example.com"
+        }
+    ]
+}
