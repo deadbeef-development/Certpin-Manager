@@ -29,6 +29,7 @@ server {{
 
     location / {{
         proxy_pass http://127.0.0.1:{certpin_port};
+        proxy_set_header Host {host_header};
         proxy_set_header X-Forwarded-Proto https;
         proxy_set_header X-Forwarded-Port 443;
         proxy_set_header X-Real-IP $remote_addr;
@@ -45,7 +46,8 @@ def run_site(
     server_name: str, 
     upstream_server_name: str, upstream_host: str, upstream_port: int,
     pinned_cert_file_path: str,
-    site_cert_file_path: str, site_key_file_path: str
+    site_cert_file_path: str, site_key_file_path: str,
+    host_header: str
 ):
     nginx_config_file_path = NGINX_SITES_DIR + '/' + upstream_server_name + '.conf'
 
@@ -64,7 +66,8 @@ def run_site(
             server_name=server_name,
             site_cert=site_cert_file_path,
             site_privkey=site_key_file_path,
-            certpin_port=certpin_port
+            certpin_port=certpin_port,
+            host_header=host_header
         )
 
         with open(nginx_config_file_path, 'w') as fio:
@@ -76,6 +79,7 @@ def run_site_from_config(
         pinned_cert: str = None, 
         site_cert: str = None, 
         site_key: str = None,
+        host_header: str = "$host",
         **kwargs
 ) -> Thread:
     pinned_cert_file_path = PINNED_CERTS_DIR_PATH + '/' + pinned_cert
@@ -86,6 +90,7 @@ def run_site_from_config(
         pinned_cert_file_path=pinned_cert_file_path,
         site_cert_file_path=site_cert_file_path,
         site_key_file_path=site_key_file_path,
+        host_header=host_header,
         **kwargs
     )
 
