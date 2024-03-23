@@ -5,7 +5,6 @@ import json
 from threading import Thread, Event
 from functools import partial
 from contextlib import contextmanager
-from subprocess import Popen, TimeoutExpired
 import atexit
 from socketserver import ThreadingTCPServer
 
@@ -38,21 +37,8 @@ server {{
 }}
 """
 
-def kill_subprocess(proc):
-    try:
-        proc.terminate()
-        proc.wait(timeout=10)
-    except TimeoutExpired:
-        proc.kill()
-
-def run_nginx() -> Popen:
-    cmd = ["nginx", "-g", "daemon off;"]
-
-    proc = Popen(cmd, start_new_session=True)
-
-    atexit.register(kill_subprocess, proc)
-
-    return proc
+def start_nginx():
+    os.system("service nginx start")
 
 @contextmanager
 def run_site(
@@ -105,6 +91,7 @@ def run_site_from_config(
 
     def target():
         with context as server:
+            print(f"Serving Certpin Backend On {server.server_address}")
             server.serve_forever()
 
     t = Thread(None, target)
@@ -126,11 +113,10 @@ def __main__(args: List[str]):
         t = run_site_from_config(**site_config)
         threads.append(t)
     
-    run_nginx()
-    
+    start_nginx()
+
     for t in threads:
         t.join()
 
 if __name__ == '__main__':
     __main__(sys.argv)
-
