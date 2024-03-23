@@ -7,6 +7,7 @@ from functools import partial
 from contextlib import contextmanager
 from subprocess import Popen, TimeoutExpired
 import atexit
+from socketserver import ThreadingTCPServer
 
 from certpin.server import run_certpin_server
 
@@ -85,33 +86,28 @@ def run_site(
 
         yield server
 
-def run_site_from_config(site_config: dict, ready: Event) -> Thread:
-    def target(
-            pinned_cert: str = None, 
-            site_cert: str = None, 
-            site_key: str = None,
-            **kwargs
-    ):
-        pinned_cert_file_path = PINNED_CERTS_DIR_PATH + '/' + pinned_cert
-        site_cert_file_path = SITE_CERTS_DIR_PATH + '/' + site_cert
-        site_key_file_path = SITE_KEYS_DIR_PATH + '/' + site_key
+def run_site_from_config(
+        pinned_cert: str = None, 
+        site_cert: str = None, 
+        site_key: str = None,
+        **kwargs
+) -> Thread:
+    pinned_cert_file_path = PINNED_CERTS_DIR_PATH + '/' + pinned_cert
+    site_cert_file_path = SITE_CERTS_DIR_PATH + '/' + site_cert
+    site_key_file_path = SITE_KEYS_DIR_PATH + '/' + site_key
 
-        try:
-            context = run_site(
-                pinned_cert_file_path=pinned_cert_file_path,
-                site_cert_file_path=site_cert_file_path,
-                site_key_file_path=site_key_file_path,
-                **kwargs
-            )
+    context = run_site(
+        pinned_cert_file_path=pinned_cert_file_path,
+        site_cert_file_path=site_cert_file_path,
+        site_key_file_path=site_key_file_path,
+        **kwargs
+    )
 
-            with context as server:
-                ready.set()
-                server.serve_forever()
-            
-        finally:
-            ready.set()
-    
-    t = Thread(None, target, kwargs=site_config)
+    def target():
+        with context as server:
+            server.serve_forever()
+
+    t = Thread(None, target)
     t.start()
 
     return t
@@ -125,17 +121,10 @@ def __main__(args: List[str]):
         config = json.load(fio)
     
     threads: List[Thread] = list()
-    ready_events: List[Event] = list()
 
     for site_config in config['sites']:
-        ready = Event()
-        t = run_site_from_config(site_config, ready)
-
-        ready_events.append(ready)
+        t = run_site_from_config(**site_config)
         threads.append(t)
-    
-    for ready in ready_events:
-        ready.wait()
     
     run_nginx()
     
