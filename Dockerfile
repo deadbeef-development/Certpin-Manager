@@ -16,10 +16,10 @@ RUN /usr/src/certpin/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 443
 
-CMD /usr/src/certpin/venv/bin/python /usr/src/certpin/manager.py
+CMD /usr/src/certpin/venv/bin/python -u /usr/src/certpin/manager.py
 
 # Instructions:
-#  - docker build -t certpin .
-#  - docker run -p 443:443 -v ./certpin:/etc/certpin certpin
+#  - docker build . -t certpin
+#  - docker run certpin --name certpin -p 443:443 -v ./certpin:/etc/certpin
 
     
