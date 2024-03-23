@@ -1,5 +1,8 @@
-FROM nginx
-RUN apt-get update && apt-get install -y python3 python3-pip python3-venv git
+#FROM nginx
+FROM ubuntu:focal
+
+RUN apt-get update
+RUN apt-get install -y python3 python3-pip python3-venv git nginx
 
 WORKDIR /usr/src/certpin
 
@@ -11,10 +14,10 @@ RUN /usr/src/certpin/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 443
 
-CMD nginx -g 'daemon on;' && /usr/src/certpin/venv/bin/python /usr/src/certpin/manager.py
+CMD /usr/src/certpin/venv/bin/python /usr/src/certpin/manager.py
 
 # Instructions:
 #  - docker build -t certpin .
-#  - docker run -v ./certpin:/etc/certpin certpin
+#  - docker run -p 443:443 -v ./certpin:/etc/certpin certpin
 
     

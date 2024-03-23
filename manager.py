@@ -5,6 +5,8 @@ import json
 from threading import Thread, Event
 from functools import partial
 from contextlib import contextmanager
+from subprocess import Popen, TimeoutExpired
+import atexit
 
 from certpin.server import run_certpin_server
 
@@ -35,7 +37,21 @@ server {{
 }}
 """
 
-reload_nginx = partial(os.system, "sudo nginx -s reload")
+def kill_subprocess(proc):
+    try:
+        proc.terminate()
+        proc.wait(timeout=10)
+    except TimeoutExpired:
+        proc.kill()
+
+def run_nginx() -> Popen:
+    cmd = ["nginx", "-g", "daemon off;"]
+
+    proc = Popen(cmd, start_new_session=True)
+
+    atexit.register(kill_subprocess, proc)
+
+    return proc
 
 @contextmanager
 def run_site(
@@ -121,7 +137,7 @@ def __main__(args: List[str]):
     for ready in ready_events:
         ready.wait()
     
-    reload_nginx()
+    run_nginx()
     
     for t in threads:
         t.join()
