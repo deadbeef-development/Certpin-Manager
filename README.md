@@ -43,6 +43,6 @@ For each site item:
 Once everything is configured, you can build the image and run the container:
 ```bash
 docker build . -t certpin
-docker run certpin --name certpin -p 443:443 -v ./certpin:/etc/certpin
+docker run -d --name certpin -p '443:443' -v ./certpin:/etc/certpin certpin
 ```
 
